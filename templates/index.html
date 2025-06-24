@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EnvironmentTagger</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .result-container {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .tag-label {
+            display: inline-block;
+            background-color: #f0f0f0;
+            padding: 5px 10px;
+            margin: 2px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+        }
+        .color-box {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            margin-right: 5px;
+            border: 1px solid #ccc;
+        }
+        .tab-content {
+            padding-top: 20px;
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 1rem;
+        }
+        .upload-area:hover {
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">EnvironmentTagger</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://github.com/dxaginfo/EnvironmentTagger-Media-Automation" target="_blank">GitHub</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#helpModal">Help</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="single-tab" data-bs-toggle="tab" data-bs-target="#single" type="button" role="tab">Single Media</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="batch-tab" data-bs-toggle="tab" data-bs-target="#batch" type="button" role="tab">Batch Processing</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="jobs-tab" data-bs-toggle="tab" data-bs-target="#jobs" type="button" role="tab">Job Status</button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content">
+                            <!-- Single Media Tab -->
+                            <div class="tab-pane fade show active" id="single" role="tabpanel">
+                                <form id="singleForm">
+                                    <div class="mb-3">
+                                        <label class="form-label">Upload Media File</label>
+                                        <div class="upload-area" id="dropArea">
+                                            <div>
+                                                <i class="bi bi-cloud-arrow-up fs-1"></i>
+                                                <p>Drag & drop an image or video file here, or click to browse</p>
+                                            </div>
+                                            <input type="file" id="mediaFile" class="d-none" accept="image/*,video/*">
+                                        </div>
+                                        <div class="text-center mb-3">
+                                            <span class="text-muted">or</span>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="mediaUrl" class="form-label">Media URL</label>
+                                            <input type="url" class="form-control" id="mediaUrl" placeholder="https://example.com/image.jpg">
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="analysisDepth" class="form-label">Analysis Depth</label>
+                                            <select class="form-select" id="analysisDepth">
+                                                <option value="basic">Basic</option>
+                                                <option value="standard" selected>Standard</option>
+                                                <option value="detailed">Detailed</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="outputFormat" class="form-label">Output Format</label>
+                                            <select class="form-select" id="outputFormat">
+                                                <option value="json" selected>JSON</option>
+                                                <option value="csv">CSV</option>
+                                                <option value="xml">XML</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary" id="analyzeBtn">Analyze</button>
+                                </form>
+
+                                <div class="mt-4 d-none" id="singleResultContainer">
+                                    <h4>Analysis Results</h4>
+                                    <div class="result-container p-3 border rounded">
+                                        <div id="singleResult">
+                                            <!-- Results will be displayed here -->
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-secondary mt-3" id="downloadResultBtn">Download Results</button>
+                                </div>
+                            </div>
+
+                            <!-- Batch Processing Tab -->
+                            <div class="tab-pane fade" id="batch" role="tabpanel">
+                                <form id="batchForm">
+                                    <div class="mb-3">
+                                        <label class="form-label">Media Sources</label>
+                                        <textarea class="form-control" id="mediaSources" rows="5" placeholder="Enter one URL or path per line"></textarea>
+                                        <div class="form-text">Enter one URL or path per line. You can also use Google Drive IDs in the format 'drive://file_id'.</div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="batchAnalysisDepth" class="form-label">Analysis Depth</label>
+                                            <select class="form-select" id="batchAnalysisDepth">
+                                                <option value="basic">Basic</option>
+                                                <option value="standard" selected>Standard</option>
+                                                <option value="detailed">Detailed</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-check mt-4">
+                                                <input class="form-check-input" type="checkbox" id="extractFrames" checked>
+                                                <label class="form-check-label" for="extractFrames">
+                                                    Extract frames from videos
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3" id="frameIntervalContainer">
+                                        <div class="col-md-6">
+                                            <label for="frameInterval" class="form-label">Frame Interval (seconds)</label>
+                                            <input type="number" class="form-control" id="frameInterval" min="1" value="10">
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary" id="batchAnalyzeBtn">Start Batch Job</button>
+                                </form>
+
+                                <div class="mt-4 d-none" id="batchResultContainer">
+                                    <h4>Batch Job Created</h4>
+                                    <div class="alert alert-success">
+                                        <p><strong>Job ID:</strong> <span id="batchJobId"></span></p>
+                                        <p><strong>Status:</strong> <span id="batchJobStatus"></span></p>
+                                        <p><strong>Progress:</strong> <span id="batchJobProgress"></span></p>
+                                    </div>
+                                    <button class="btn btn-secondary" id="checkJobStatusBtn">Check Status</button>
+                                </div>
+                            </div>
+
+                            <!-- Job Status Tab -->
+                            <div class="tab-pane fade" id="jobs" role="tabpanel">
+                                <div class="mb-3">
+                                    <label for="jobId" class="form-label">Job ID</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="jobId" placeholder="Enter job ID">
+                                        <button class="btn btn-primary" type="button" id="fetchJobBtn">Fetch</button>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4 d-none" id="jobStatusContainer">
+                                    <h4>Job Status</h4>
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div id="jobDetails">
+                                                <!-- Job details will be displayed here -->
+                                            </div>
+                                            <div class="progress mt-3 mb-3">
+                                                <div class="progress-bar" id="jobProgress" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                            <button class="btn btn-primary d-none" id="viewResultsBtn">View Results</button>
+                                            <button class="btn btn-secondary d-none" id="exportBtn">Export Results</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-4 d-none" id="jobResultContainer">
+                                        <h4>Job Results</h4>
+                                        <div class="result-container p-3 border rounded">
+                                            <div id="jobResult">
+                                                <!-- Results will be displayed here -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="helpModalLabel">EnvironmentTagger Help</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h4>About EnvironmentTagger</h4>
+                    <p>EnvironmentTagger is an AI-powered tool that automatically identifies, tags, and categorizes environments in media content. Using computer vision and natural language processing, it analyzes video frames and images to extract detailed environment information.</p>
+                    
+                    <h4>How to Use</h4>
+                    <h5>Single Media Analysis</h5>
+                    <ol>
+                        <li>Upload an image or video file, or provide a URL to the media.</li>
+                        <li>Select the analysis depth:
+                            <ul>
+                                <li><strong>Basic:</strong> Quick analysis with essential environment tags</li>
+                                <li><strong>Standard:</strong> Comprehensive analysis with environment attributes</li>
+                                <li><strong>Detailed:</strong> In-depth analysis with objects, colors, and suggested tags</li>
+                            </ul>
+                        </li>
+                        <li>Choose the output format: JSON, CSV, or XML.</li>
+                        <li>Click "Analyze" to process the media.</li>
+                    </ol>
+                    
+                    <h5>Batch Processing</h5>
+                    <ol>
+                        <li>Enter multiple media URLs or paths, one per line.</li>
+                        <li>Configure analysis options similar to single media.</li>
+                        <li>For videos, specify whether to extract frames and at what interval.</li>
+                        <li>Click "Start Batch Job" to begin processing.</li>
+                        <li>Use the Job ID to track progress and retrieve results later.</li>
+                    </ol>
+                    
+                    <h4>Result Types</h4>
+                    <p>Depending on the analysis depth, results may include:</p>
+                    <ul>
+                        <li>Primary environment identification</li>
+                        <li>Secondary environment tags</li>
+                        <li>Environment attributes (lighting, size, occupancy, mood, period)</li>
+                        <li>Objects present in the environment</li>
+                        <li>Color palette extraction</li>
+                        <li>Suggested tags for media production</li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // DOM elements
+        const dropArea = document.getElementById('dropArea');
+        const mediaFileInput = document.getElementById('mediaFile');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const singleResultContainer = document.getElementById('singleResultContainer');
+        const singleResult = document.getElementById('singleResult');
+        const downloadResultBtn = document.getElementById('downloadResultBtn');
+        
+        // Initialize event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Drag and drop functionality
+            dropArea.addEventListener('click', () => mediaFileInput.click());
+            
+            dropArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropArea.classList.add('bg-light');
+            });
+            
+            dropArea.addEventListener('dragleave', () => {
+                dropArea.classList.remove('bg-light');
+            });
+            
+            dropArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropArea.classList.remove('bg-light');
+                
+                if (e.dataTransfer.files.length) {
+                    mediaFileInput.files = e.dataTransfer.files;
+                    const fileName = e.dataTransfer.files[0].name;
+                    dropArea.querySelector('p').textContent = `File selected: ${fileName}`;
+                }
+            });
+            
+            mediaFileInput.addEventListener('change', () => {
+                if (mediaFileInput.files.length) {
+                    const fileName = mediaFileInput.files[0].name;
+                    dropArea.querySelector('p').textContent = `File selected: ${fileName}`;
+                }
+            });
+            
+            // Single form submission
+            document.getElementById('singleForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Here we would normally submit the form data to the server
+                // For now, let's just show a sample result
+                
+                // Sample result display
+                const sampleResult = {
+                    "media_id": "sample_image.jpg",
+                    "analysis_timestamp": new Date().toISOString(),
+                    "primary_environment": "Interior - Commercial - Office",
+                    "secondary_environments": ["Meeting Room", "Corporate"],
+                    "attributes": {
+                        "lighting": "Artificial - Fluorescent",
+                        "size": "Medium",
+                        "occupancy": "Sparse",
+                        "mood": "Professional",
+                        "period": "Modern"
+                    },
+                    "objects": ["Desk", "Chair", "Computer", "Whiteboard", "Plant"],
+                    "confidence_score": 0.92,
+                    "color_palette": ["#F5F5F5", "#0A2463", "#3E92CC", "#D8E1E9", "#B2B2B2"],
+                    "suggested_tags": ["corporate environment", "workplace", "office space", "meeting area", "business setting"]
+                };
+                
+                // Display the result
+                displaySingleResult(sampleResult);
+            });
+            
+            // Batch form submission
+            document.getElementById('batchForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Here we would normally submit the form data to the server
+                // For now, let's just show a sample job created result
+                
+                const batchJobId = 'job_' + Math.random().toString(36).substr(2, 9);
+                document.getElementById('batchJobId').textContent = batchJobId;
+                document.getElementById('batchJobStatus').textContent = 'Processing';
+                document.getElementById('batchJobProgress').textContent = '0/5 files';
+                
+                document.getElementById('batchResultContainer').classList.remove('d-none');
+            });
+            
+            // Job status check
+            document.getElementById('fetchJobBtn').addEventListener('click', function() {
+                const jobId = document.getElementById('jobId').value.trim();
+                
+                if (!jobId) {
+                    alert('Please enter a job ID');
+                    return;
+                }
+                
+                // Here we would normally fetch the job status from the server
+                // For now, let's just show a sample job status
+                
+                const jobStatus = {
+                    job_id: jobId,
+                    status: 'completed',
+                    created_at: '2025-06-24T10:15:30Z',
+                    started_at: '2025-06-24T10:15:35Z',
+                    completed_at: '2025-06-24T10:18:20Z',
+                    processed_count: 5,
+                    total_count: 5
+                };
+                
+                displayJobStatus(jobStatus);
+            });
+            
+            // Toggle frame interval visibility based on extract frames checkbox
+            document.getElementById('extractFrames').addEventListener('change', function() {
+                document.getElementById('frameIntervalContainer').style.display = this.checked ? 'block' : 'none';
+            });
+        });
+        
+        // Display single result
+        function displaySingleResult(result) {
+            singleResultContainer.classList.remove('d-none');
+            
+            let html = `
+                <div class="mb-3">
+                    <h5>Primary Environment</h5>
+                    <p class="tag-label">${result.primary_environment}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h5>Secondary Environments</h5>
+                    <div>
+            `;
+            
+            result.secondary_environments.forEach(env => {
+                html += `<span class="tag-label">${env}</span> `;
+            });
+            
+            html += `
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <h5>Environment Attributes</h5>
+                    <table class="table table-bordered">
+                        <tr>
+                            <th>Lighting</th>
+                            <td>${result.attributes.lighting}</td>
+                        </tr>
+                        <tr>
+                            <th>Size</th>
+                            <td>${result.attributes.size}</td>
+                        </tr>
+                        <tr>
+                            <th>Occupancy</th>
+                            <td>${result.attributes.occupancy}</td>
+                        </tr>
+                        <tr>
+                            <th>Mood</th>
+                            <td>${result.attributes.mood}</td>
+                        </tr>
+                        <tr>
+                            <th>Period</th>
+                            <td>${result.attributes.period}</td>
+                        </tr>
+                    </table>
+                </div>
+            `;
+            
+            if (result.objects && result.objects.length) {
+                html += `
+                    <div class="mb-3">
+                        <h5>Objects</h5>
+                        <div>
+                `;
+                
+                result.objects.forEach(obj => {
+                    html += `<span class="tag-label">${obj}</span> `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (result.color_palette && result.color_palette.length) {
+                html += `
+                    <div class="mb-3">
+                        <h5>Color Palette</h5>
+                        <div>
+                `;
+                
+                result.color_palette.forEach(color => {
+                    html += `<div class="color-box" style="background-color: ${color};" title="${color}"></div>`;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (result.suggested_tags && result.suggested_tags.length) {
+                html += `
+                    <div class="mb-3">
+                        <h5>Suggested Tags</h5>
+                        <div>
+                `;
+                
+                result.suggested_tags.forEach(tag => {
+                    html += `<span class="tag-label">${tag}</span> `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += `
+                <div class="mb-3">
+                    <h5>Confidence Score</h5>
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" style="width: ${result.confidence_score * 100}%;" 
+                            aria-valuenow="${result.confidence_score * 100}" aria-valuemin="0" aria-valuemax="100">
+                            ${Math.round(result.confidence_score * 100)}%
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            singleResult.innerHTML = html;
+        }
+        
+        // Display job status
+        function displayJobStatus(job) {
+            document.getElementById('jobStatusContainer').classList.remove('d-none');
+            
+            const progress = (job.processed_count / job.total_count) * 100;
+            
+            const detailsHtml = `
+                <p><strong>Job ID:</strong> ${job.job_id}</p>
+                <p><strong>Status:</strong> ${job.status}</p>
+                <p><strong>Created:</strong> ${new Date(job.created_at).toLocaleString()}</p>
+                <p><strong>Started:</strong> ${job.started_at ? new Date(job.started_at).toLocaleString() : 'N/A'}</p>
+                <p><strong>Completed:</strong> ${job.completed_at ? new Date(job.completed_at).toLocaleString() : 'N/A'}</p>
+                <p><strong>Progress:</strong> ${job.processed_count}/${job.total_count} files</p>
+            `;
+            
+            document.getElementById('jobDetails').innerHTML = detailsHtml;
+            
+            const progressBar = document.getElementById('jobProgress');
+            progressBar.style.width = `${progress}%`;
+            progressBar.setAttribute('aria-valuenow', progress);
+            progressBar.textContent = `${Math.round(progress)}%`;
+            
+            // Show/hide action buttons based on job status
+            document.getElementById('viewResultsBtn').classList.toggle('d-none', job.status !== 'completed');
+            document.getElementById('exportBtn').classList.toggle('d-none', job.status !== 'completed');
+        }
+    </script>
+</body>
+</html>
