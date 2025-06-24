@@ -1,0 +1,51 @@
+steps:
+# Build the container image
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/$PROJECT_ID/environmenttagger:$COMMIT_SHA', '.']
+
+# Push the container image to Container Registry
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'gcr.io/$PROJECT_ID/environmenttagger:$COMMIT_SHA']
+
+# Deploy container image to Cloud Run
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args:
+  - 'run'
+  - 'deploy'
+  - 'environmenttagger'
+  - '--image'
+  - 'gcr.io/$PROJECT_ID/environmenttagger:$COMMIT_SHA'
+  - '--region'
+  - 'us-central1'
+  - '--platform'
+  - 'managed'
+  - '--allow-unauthenticated'
+  - '--memory'
+  - '2Gi'
+  - '--cpu'
+  - '2'
+  - '--max-instances'
+  - '10'
+  - '--set-env-vars'
+  - 'GOOGLE_APPLICATION_CREDENTIALS=/secrets/app_credentials.json,STORAGE_BUCKET=${_STORAGE_BUCKET}'
+  - '--set-secrets'
+  - '/secrets/app_credentials.json=app_credentials:latest,GEMINI_API_KEY=gemini_api_key:latest'
+
+# Tag the image as latest
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['tag', 'gcr.io/$PROJECT_ID/environmenttagger:$COMMIT_SHA', 'gcr.io/$PROJECT_ID/environmenttagger:latest']
+
+# Push the latest tag
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'gcr.io/$PROJECT_ID/environmenttagger:latest']
+
+images:
+- 'gcr.io/$PROJECT_ID/environmenttagger:$COMMIT_SHA'
+- 'gcr.io/$PROJECT_ID/environmenttagger:latest'
+
+substitutions:
+  _STORAGE_BUCKET: 'environmenttagger-media'  # Default value, can be overridden
+
+options:
+  logging: CLOUD_LOGGING_ONLY
