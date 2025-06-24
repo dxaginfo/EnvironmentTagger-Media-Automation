@@ -1,0 +1,69 @@
+{
+  "analysis_detail_levels": {
+    "basic": ["object_detection", "label_detection", "color_analysis"],
+    "standard": ["object_detection", "label_detection", "color_analysis", 
+                "scene_detection", "environmental_attributes"],
+    "detailed": ["object_detection", "label_detection", "color_analysis", 
+                "scene_detection", "environmental_attributes", 
+                "lighting_analysis", "spatial_analysis", "gemini_enhanced"]
+  },
+  "vocabulary_path": "data/environment_vocabulary.json",
+  "color_reference_data": "data/color_reference.json",
+  "use_firebase": true,
+  "firebase_credentials_path": "path/to/firebase-credentials.json",
+  "use_custom_models": false,
+  "custom_model_path": "models/environment_classifier",
+  "sample_rate_default": 5,
+  "output_format_default": "json",
+  "gemini_model": "gemini-1.5-pro-vision",
+  "gemini_api_endpoint": "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+  "allow_temporary_files": true,
+  "temp_directory": "/tmp/environment_tagger",
+  "api": {
+    "host": "0.0.0.0",
+    "port": 5000,
+    "debug": false,
+    "rate_limits": {
+      "requests_per_minute": 60,
+      "burst": 10
+    },
+    "authentication": {
+      "require_api_key": true,
+      "jwt_secret": "your-jwt-secret-here",
+      "jwt_expiration": 86400
+    }
+  },
+  "storage": {
+    "google_cloud_storage": {
+      "bucket_name": "your-media-bucket",
+      "results_prefix": "environment_analysis_results/"
+    },
+    "local_storage": {
+      "enabled": true,
+      "results_path": "results/"
+    }
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "file": "logs/environment_tagger.log",
+    "max_size_mb": 10,
+    "backup_count": 5
+  },
+  "integrations": {
+    "scene_validator": {
+      "api_endpoint": "https://api.example.com/scene-validator",
+      "api_key": "your-scene-validator-api-key"
+    },
+    "timeline_assembler": {
+      "api_endpoint": "https://api.example.com/timeline-assembler",
+      "api_key": "your-timeline-assembler-api-key"
+    }
+  },
+  "batch_processing": {
+    "max_concurrent_jobs": 5,
+    "job_timeout_seconds": 3600,
+    "retry_count": 3,
+    "retry_delay_seconds": 5
+  }
+}
